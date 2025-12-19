@@ -6,6 +6,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
@@ -15,22 +16,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-
-
 public class BattleArenaGame extends Application {
 
     private static final double SCREEN_WIDTH = 1000;
     private static final double SCREEN_HEIGHT = 600;
     private static final double TOP_BAR_HEIGHT = 100;
 
-
-
     private Fighter player1;
     private Fighter player2;
     private ArrayList<Projectile> projectiles = new ArrayList<>();
     private Set<String> pressedKeys = new HashSet<>();
-
-
 
     private Pane gamePane;
     private Circle player1Circle;
@@ -50,8 +45,7 @@ public class BattleArenaGame extends Application {
     private ComboBox<String> player2Choice;
     private ComboBox<String> player1WeaponChoice;
     private ComboBox<String> player2WeaponChoice;
-
-
+    private ComboBox<String> gameModeChoice;
 
     private int player1Wins = 0;
     private int player2Wins = 0;
@@ -59,13 +53,13 @@ public class BattleArenaGame extends Application {
     private Stage primaryStage;
     private boolean gameEnded = false;
 
-
+    // وضع اللعب: true = ملعب كامل، false = نصفين
+    private boolean fullArenaMode = true;
+    private Line dividerLine;
 
     public static void main(String[] args) {
         launch(args);
     }
-
-
 
     @Override
     public void start(Stage stage) {
@@ -80,39 +74,47 @@ public class BattleArenaGame extends Application {
         System.out.println("✅ Game started successfully!");
     }
 
-
-
     private Scene createSelectionScene() {
-        VBox root = new VBox(25);
+        VBox root = new VBox(15);
         root.setAlignment(Pos.CENTER);
         root.setStyle("-fx-background-color: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);");
         root.setPrefSize(SCREEN_WIDTH, SCREEN_HEIGHT + TOP_BAR_HEIGHT);
 
         Label titleLabel = new Label("⚔️ BATTLE ARENA ⚔️");
-        titleLabel.setFont(Font.font("Impact", FontWeight.BOLD, 52));
+        titleLabel.setFont(Font.font("Impact", FontWeight.BOLD, 48));
         titleLabel.setStyle("-fx-text-fill: #FFD700; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 10, 0.5, 0, 3);");
 
         Label subtitleLabel = new Label("Choose Your Fighter");
-        subtitleLabel.setStyle("-fx-text-fill: #ffffff; -fx-font-size: 20px;");
+        subtitleLabel.setStyle("-fx-text-fill: #ffffff; -fx-font-size: 18px;");
 
-        HBox selectionsBox = new HBox(80);
+        VBox gameModeBox = createGameModeBox();
+
+        HBox selectionsBox = new HBox(60);
         selectionsBox.setAlignment(Pos.CENTER);
 
         VBox player1Box = createPlayerSelectionBox("PLAYER 1", true);
 
         Label vsLabel = new Label("VS");
-        vsLabel.setFont(Font.font("Impact", FontWeight.BOLD, 48));
+        vsLabel.setFont(Font.font("Impact", FontWeight.BOLD, 40));
         vsLabel.setStyle("-fx-text-fill: #FFD700;");
 
         VBox player2Box = createPlayerSelectionBox("PLAYER 2", false);
 
         selectionsBox.getChildren().addAll(player1Box, vsLabel, player2Box);
 
-
         Button startButton = new Button("⚔️ START BATTLE ⚔️");
-        startButton.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        startButton.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        startButton.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500); " +
+                        "-fx-text-fill: #000000; " +
+                        "-fx-padding: 12 40 12 40; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-cursor: hand;"
+        );
 
         startButton.setOnAction(e -> {
+            fullArenaMode = gameModeChoice.getValue().contains("Full");
+
             Scene gameScene = createGameScene();
             primaryStage.setScene(gameScene);
             startGame();
@@ -120,53 +122,85 @@ public class BattleArenaGame extends Application {
 
         VBox controlsBox = createControlsBox();
 
-        root.getChildren().addAll(titleLabel, subtitleLabel, selectionsBox, startButton, controlsBox);
+        root.getChildren().addAll(titleLabel, subtitleLabel, gameModeBox, selectionsBox, startButton, controlsBox);
 
         Scene scene = new Scene(root, SCREEN_WIDTH, SCREEN_HEIGHT + TOP_BAR_HEIGHT);
-
 
         try {
             scene.getStylesheets().add(getClass().getResource("/game-style.css").toExternalForm());
         } catch (Exception e) {
-            System.err.println("❌ ERROR: Could not load game-style.css. Ensure it is in the resources root.");
+            System.err.println("❌ ERROR: Could not load game-style.css.");
         }
 
         return scene;
     }
 
+    private VBox createGameModeBox() {
+        VBox box = new VBox(8);
+        box.setAlignment(Pos.CENTER);
+        box.setStyle(
+                "-fx-background-color: rgba(255, 215, 0, 0.15); " +
+                        "-fx-background-radius: 12; " +
+                        "-fx-padding: 15; " +
+                        "-fx-border-color: #FFD700; " +
+                        "-fx-border-width: 2; " +
+                        "-fx-border-radius: 12;"
+        );
+
+        Label modeLabel = new Label("🎮 Game Mode");
+        modeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        modeLabel.setStyle("-fx-text-fill: #FFD700;");
+
+        gameModeChoice = new ComboBox<>();
+        gameModeChoice.getItems().addAll(
+                "🌍 Full Arena",
+                "⚡ Split Arena"
+        );
+        gameModeChoice.setValue("🌍 Full Arena");
+        gameModeChoice.setPrefWidth(250);
+
+        Label descLabel = new Label("Full Arena: Move anywhere | Split Arena: Each player in their half");
+        descLabel.setStyle("-fx-text-fill: #CCCCCC; -fx-font-size: 10px;");
+        descLabel.setWrapText(true);
+        descLabel.setMaxWidth(300);
+        descLabel.setAlignment(Pos.CENTER);
+
+        box.getChildren().addAll(modeLabel, gameModeChoice, descLabel);
+
+        return box;
+    }
+
     private VBox createPlayerSelectionBox(String playerName, boolean isPlayer1) {
-        VBox box = new VBox(15);
+        VBox box = new VBox(12);
         box.setAlignment(Pos.CENTER);
         box.setStyle(
                 "-fx-background-color: rgba(255, 255, 255, 0.1); " +
-                        "-fx-background-radius: 20; " +
-                        "-fx-padding: 30; " +
+                        "-fx-background-radius: 15; " +
+                        "-fx-padding: 20; " +
                         "-fx-border-color: " + (isPlayer1 ? "#00ff88" : "#ff0088") + "; " +
                         "-fx-border-width: 3; " +
-                        "-fx-border-radius: 20;"
+                        "-fx-border-radius: 15;"
         );
 
         Label nameLabel = new Label(playerName);
-        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         nameLabel.setStyle("-fx-text-fill: " + (isPlayer1 ? "#00ff88" : "#ff0088") + ";");
 
         Label charLabel = new Label("Character:");
-        charLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
+        charLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14;");
 
         ComboBox<String> charChoice = new ComboBox<>();
         charChoice.getItems().addAll("Warrior ⚔️", "Mage 🔮", "Archer 🏹");
         charChoice.setValue(isPlayer1 ? "Warrior ⚔️" : "Archer 🏹");
-
-        charChoice.setPrefWidth(200);
+        charChoice.setPrefWidth(180);
 
         Label weaponLabel = new Label("Starting Weapon:");
-        weaponLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16;");
+        weaponLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14;");
 
         ComboBox<String> weaponChoice = new ComboBox<>();
         weaponChoice.getItems().addAll(Weapon.getAllWeaponNames());
         weaponChoice.setValue("Pistol");
-
-        weaponChoice.setPrefWidth(200);
+        weaponChoice.setPrefWidth(180);
 
         if (isPlayer1) {
             player1Choice = charChoice;
@@ -204,8 +238,6 @@ public class BattleArenaGame extends Application {
         return box;
     }
 
-
-
     private Scene createGameScene() {
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #0a0a0a;");
@@ -214,11 +246,20 @@ public class BattleArenaGame extends Application {
         gamePane.setPrefSize(SCREEN_WIDTH, SCREEN_HEIGHT);
         gamePane.setStyle("-fx-background-color: linear-gradient(to bottom, #1a1a2e, #16213e);");
 
-
+        // شبكة الخلفية
         for (int i = 0; i < 20; i++) {
-            javafx.scene.shape.Line gridLine = new javafx.scene.shape.Line(i * 50, 0, i * 50, SCREEN_HEIGHT);
+            Line gridLine = new Line(i * 50, 0, i * 50, SCREEN_HEIGHT);
             gridLine.setStroke(Color.rgb(255, 255, 255, 0.05));
             gamePane.getChildren().add(gridLine);
+        }
+
+        // إضافة خط الفاصل إذا كان الوضع نصف ملعب
+        if (!fullArenaMode) {
+            dividerLine = new Line(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
+            dividerLine.setStroke(Color.rgb(255, 215, 0, 0.6));
+            dividerLine.setStrokeWidth(3);
+            dividerLine.getStrokeDashArray().addAll(15d, 10d);
+            gamePane.getChildren().add(dividerLine);
         }
 
         HBox topBar = createTopBar();
@@ -230,13 +271,11 @@ public class BattleArenaGame extends Application {
 
         Scene scene = new Scene(root, SCREEN_WIDTH, SCREEN_HEIGHT + TOP_BAR_HEIGHT);
 
-
         try {
             scene.getStylesheets().add(getClass().getResource("/game-style.css").toExternalForm());
         } catch (Exception e) {
-            System.err.println("❌ ERROR: Could not load game-style.css. Ensure it is in the resources root.");
+            System.err.println("❌ ERROR: Could not load game-style.css.");
         }
-
 
         scene.setOnKeyPressed(e -> pressedKeys.add(e.getCode().toString()));
         scene.setOnKeyReleased(e -> pressedKeys.remove(e.getCode().toString()));
@@ -293,7 +332,6 @@ public class BattleArenaGame extends Application {
         ProgressBar healthBar = new ProgressBar(1.0);
         healthBar.setPrefWidth(300);
         healthBar.setPrefHeight(20);
-
         healthBar.setStyle("-fx-accent: #00ff88;");
 
         Label healthLabel = new Label("100 / 100 HP");
@@ -321,8 +359,6 @@ public class BattleArenaGame extends Application {
 
         return info;
     }
-
-
 
     private void createPlayers() {
         String p1Type = player1Choice.getValue().split(" ")[0];
@@ -372,10 +408,8 @@ public class BattleArenaGame extends Application {
 
         gamePane.getChildren().addAll(player1Circle, player2Circle);
 
-        System.out.println("✅ Players created:");
+        System.out.println("✅ Players created - Mode: " + (fullArenaMode ? "Full Arena" : "Split Arena"));
     }
-
-
 
     private void startGame() {
         gameStartTime = System.currentTimeMillis();
@@ -408,7 +442,7 @@ public class BattleArenaGame extends Application {
     private void handlePlayer1Input() {
         double speed = player1.getSpeed();
         double minX = 50;
-        double maxX = SCREEN_WIDTH - 50;
+        double maxX = fullArenaMode ? SCREEN_WIDTH - 50 : (SCREEN_WIDTH / 2) - 50;
         double minY = 50;
         double maxY = SCREEN_HEIGHT - 50;
 
@@ -446,7 +480,7 @@ public class BattleArenaGame extends Application {
 
     private void handlePlayer2Input() {
         double speed = player2.getSpeed();
-        double minX = 50;
+        double minX = fullArenaMode ? 50 : (SCREEN_WIDTH / 2) + 50;
         double maxX = SCREEN_WIDTH - 50;
         double minY = 50;
         double maxY = SCREEN_HEIGHT - 50;
@@ -485,7 +519,6 @@ public class BattleArenaGame extends Application {
     }
 
     private void handleWeaponSwitch(Fighter player, boolean isPlayer1) {
-
         if (isPlayer1) {
             if (pressedKeys.contains("DIGIT1")) {
                 player.setCurrentWeapon(Weapon.createPistol());
@@ -550,7 +583,6 @@ public class BattleArenaGame extends Application {
     }
 
     private void updateSpecialAbilities() {
-
         if (player1 instanceof Mage) {
             ((Mage) player1).regenerateMana();
         }
@@ -567,7 +599,6 @@ public class BattleArenaGame extends Application {
     }
 
     private void updateTimer() {
-
         long elapsed = (System.currentTimeMillis() - gameStartTime) / 1000;
         long minutes = elapsed / 60;
         long seconds = elapsed % 60;
@@ -575,7 +606,6 @@ public class BattleArenaGame extends Application {
     }
 
     private void render() {
-
         player1Circle.setCenterX(player1.getX());
         player1Circle.setCenterY(player1.getY());
         player1Circle.setFill(Color.web(player1.getColor()));
@@ -597,7 +627,6 @@ public class BattleArenaGame extends Application {
                     projCircle.setStrokeWidth(1);
                     gamePane.getChildren().add(projCircle);
                 } catch (Exception e) {
-
                 }
             }
         }
@@ -605,10 +634,7 @@ public class BattleArenaGame extends Application {
         updateUI();
     }
 
-
-
     private void updateUI() {
-
         player1HealthLabel.setText(String.format("%.0f / %.0f HP",
                 player1.getHealth(), player1.getMaxHealth()));
         double p1Progress = player1.getHealthPercentage();
@@ -628,7 +654,6 @@ public class BattleArenaGame extends Application {
             Warrior warrior = (Warrior) player1;
             player1SpecialLabel.setText("🛡️ " + warrior.getShieldStatus());
         }
-
 
         player2HealthLabel.setText(String.format("%.0f / %.0f HP",
                 player2.getHealth(), player2.getMaxHealth()));
@@ -664,8 +689,6 @@ public class BattleArenaGame extends Application {
 
         bar.setStyle("-fx-accent: " + color + ";");
     }
-
-
 
     private void checkGameOver() {
         if (gameEnded) return;
@@ -714,7 +737,6 @@ public class BattleArenaGame extends Application {
         ButtonType exit = new ButtonType("🚪 Exit", ButtonBar.ButtonData.CANCEL_CLOSE);
 
         alert.getButtonTypes().setAll(playAgain, exit);
-
 
         alert.showAndWait().ifPresent(response -> {
             if (response == playAgain) {
