@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-
 public class BattleArenaGame extends Application {
 
     private static final double SCREEN_WIDTH = 1000;
@@ -53,7 +52,6 @@ public class BattleArenaGame extends Application {
     private Stage primaryStage;
     private boolean gameEnded = false;
 
-    // وضع اللعب: true = ملعب كامل، false = نصفين
     private boolean fullArenaMode = true;
     private Line dividerLine;
 
@@ -64,14 +62,14 @@ public class BattleArenaGame extends Application {
     @Override
     public void start(Stage stage) {
         this.primaryStage = stage;
-        primaryStage.setTitle("⚔️ Battle Arena Game ⚔️");
+        primaryStage.setTitle(" Battle Arena Game ");
 
         Scene selectionScene = createSelectionScene();
         primaryStage.setScene(selectionScene);
         primaryStage.setResizable(false);
         primaryStage.show();
 
-        System.out.println("✅ Game started successfully!");
+        System.out.println(" Game started successfully!");
     }
 
     private Scene createSelectionScene() {
@@ -274,7 +272,7 @@ public class BattleArenaGame extends Application {
         try {
             scene.getStylesheets().add(getClass().getResource("/game-style.css").toExternalForm());
         } catch (Exception e) {
-            System.err.println("❌ ERROR: Could not load game-style.css.");
+            System.err.println(" ERROR: Could not load game-style.css.");
         }
 
         scene.setOnKeyPressed(e -> pressedKeys.add(e.getCode().toString()));
@@ -716,38 +714,92 @@ public class BattleArenaGame extends Application {
     }
 
     private void showGameOverDialog(String winner) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("🏆 GAME OVER 🏆");
-        alert.setHeaderText(winner + " 🎉");
 
-        long duration = (System.currentTimeMillis() - gameStartTime) / 1000;
-        String content = String.format(
-                "⏱️ Game Duration: %d:%02d\n\n" +
-                        "📊 SCORE:\n" +
-                        "   Player 1: %d wins\n" +
-                        "   Player 2: %d wins\n\n" +
-                        "Would you like to play again?",
-                duration / 60, duration % 60,
-                player1Wins, player2Wins
+        Stage dialog = new Stage();
+        dialog.initOwner(primaryStage);
+        dialog.setTitle("🏆 GAME OVER 🏆");
+        dialog.setResizable(false);
+
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #0f0c29, #302b63); " +
+                        "-fx-padding: 30;"
         );
 
-        alert.setContentText(content);
+        Label title = new Label("GAME OVER");
+        title.setFont(Font.font("Impact", FontWeight.BOLD, 42));
+        title.setTextFill(Color.GOLD);
 
-        ButtonType playAgain = new ButtonType("🔄 Play Again", ButtonBar.ButtonData.YES);
-        ButtonType exit = new ButtonType("🚪 Exit", ButtonBar.ButtonData.CANCEL_CLOSE);
+        Label winnerLabel = new Label(winner);
+        winnerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 26));
 
-        alert.getButtonTypes().setAll(playAgain, exit);
+        if (winner.contains("PLAYER 1")) {
+            winnerLabel.setTextFill(Color.web("#00ff88"));
+        } else if (winner.contains("PLAYER 2")) {
+            winnerLabel.setTextFill(Color.web("#ff0088"));
+        } else {
+            winnerLabel.setTextFill(Color.WHITE);
+        }
 
-        alert.showAndWait().ifPresent(response -> {
-            if (response == playAgain) {
-                System.out.println("🔄 Restarting game...");
-                Scene selectionScene = createSelectionScene();
-                primaryStage.setScene(selectionScene);
-            } else {
-                System.out.println("👋 Thanks for playing!");
-                Platform.exit();
-                System.exit(0);
-            }
+        long duration = (System.currentTimeMillis() - gameStartTime) / 1000;
+
+        Label stats = new Label(
+                String.format(
+                        "⏱ Time: %d:%02d\n\n" +
+                                "📊 SCORE\n" +
+                                "Player 1: %d Wins\n" +
+                                "Player 2: %d Wins",
+                        duration / 60, duration % 60,
+                        player1Wins, player2Wins
+                )
+        );
+
+        stats.setFont(Font.font("Monospaced", 16));
+        stats.setTextFill(Color.WHITE);
+        stats.setAlignment(Pos.CENTER);
+
+        Button playAgain = createGameOverButton("🔄 PLAY AGAIN", "#00ff88");
+        Button menu = createGameOverButton("🏠 MAIN MENU", "#FFD700");
+        Button exit = createGameOverButton("🚪 EXIT", "#ff4b2b");
+
+        playAgain.setOnAction(e -> {
+            dialog.close();
+            startGame();
         });
+
+        menu.setOnAction(e -> {
+            dialog.close();
+            primaryStage.setScene(createSelectionScene());
+        });
+
+        exit.setOnAction(e -> {
+            Platform.exit();
+            System.exit(0);
+        });
+
+        HBox buttons = new HBox(15, playAgain, menu, exit);
+        buttons.setAlignment(Pos.CENTER);
+
+        root.getChildren().addAll(title, winnerLabel, stats, buttons);
+
+        Scene scene = new Scene(root, 420, 420);
+        dialog.setScene(scene);
+        dialog.show();
     }
+    // ================= GAME OVER BUTTON =================
+    private Button createGameOverButton(String text, String color) {
+        Button btn = new Button(text);
+        btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        btn.setStyle(
+                "-fx-background-color: " + color + ";" +
+                        "-fx-text-fill: black;" +
+                        "-fx-padding: 10 18 10 18;" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-cursor: hand;"
+        );
+        return btn;
+    }
+
+
 }

@@ -12,7 +12,7 @@ public class Mage extends Fighter {
 
     private int manaPoints;
     private static final int MAX_MANA = 100;
-    private static final int TELEPORT_MANA_COST = 30;
+    private static final int TELEPORT_MANA_COST = 50;
 
     private boolean magicShieldActive = false;
 
@@ -23,7 +23,7 @@ public class Mage extends Fighter {
         this.lastTeleportTime = 0;
         this.manaPoints = MAX_MANA;
 
-        System.out.println("🔮 Mage created at position (" + x + ", " + y + ")");
+        System.out.println(" Mage created at position (" + x + ", " + y + ")");
         System.out.println("   HP: " + MAX_HEALTH + " | Speed: " + SPEED + " | Weapon: Laser");
         System.out.println("   Mana: " + manaPoints + "/" + MAX_MANA);
     }
@@ -50,12 +50,12 @@ public class Mage extends Fighter {
 
         if (currentTime - lastTeleportTime < TELEPORT_COOLDOWN) {
             long remainingCooldown = TELEPORT_COOLDOWN - (currentTime - lastTeleportTime);
-            System.out.println("⏳ Teleport cooldown: " + (remainingCooldown / 1000) + " seconds");
+            System.out.println(" Teleport cooldown: " + (remainingCooldown / 1000) + " seconds");
             return;
         }
 
         if (manaPoints < TELEPORT_MANA_COST) {
-            System.out.println("❌ Not enough mana! Need " + TELEPORT_MANA_COST + ", have " + manaPoints);
+            System.out.println(" Not enough mana! Need " + TELEPORT_MANA_COST + ", have " + manaPoints);
             return;
         }
 
@@ -96,11 +96,6 @@ public class Mage extends Fighter {
 
     @Override
     public void takeDamage(double damage) {
-        if (magicShieldActive) {
-            System.out.println("🛡️ Magic Shield absorbed the attack!");
-            magicShieldActive = false;
-            return;
-        }
 
         super.takeDamage(damage);
     }

@@ -78,10 +78,7 @@ public abstract class Fighter {
         }
     }
 
-    public void heal(double amount) {
-        health = Math.min(maxHealth, health + amount);
-        System.out.println(name + " healed " + amount + " HP (HP: " + health + ")");
-    }
+
 
     public boolean isAlive() {
         return health > 0;
