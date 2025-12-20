@@ -272,7 +272,7 @@ public class BattleArenaGame extends Application {
         try {
             scene.getStylesheets().add(getClass().getResource("/game-style.css").toExternalForm());
         } catch (Exception e) {
-            System.err.println(" ERROR: Could not load game-style.css.");
+            System.err.println("❌ ERROR: Could not load game-style.css.");
         }
 
         scene.setOnKeyPressed(e -> pressedKeys.add(e.getCode().toString()));
@@ -713,8 +713,8 @@ public class BattleArenaGame extends Application {
         }
     }
 
-    private void showGameOverDialog(String winner) {
 
+    private void showGameOverDialog(String winner) {
         Stage dialog = new Stage();
         dialog.initOwner(primaryStage);
         dialog.setTitle("🏆 GAME OVER 🏆");
@@ -765,15 +765,44 @@ public class BattleArenaGame extends Application {
 
         playAgain.setOnAction(e -> {
             dialog.close();
+
+            // إيقاف gameLoop القديم إذا كان موجوداً
+            if (gameLoop != null) {
+                gameLoop.stop();
+            }
+
+            // مسح القذائف القديمة
+            projectiles.clear();
+            pressedKeys.clear();
+
+            // إزالة الدوائر القديمة من gamePane
+            gamePane.getChildren().clear();
+
+            Scene newGameScene = createGameScene();
+            primaryStage.setScene(newGameScene);
+
             startGame();
+
+            System.out.println("🔄 Game restarted!");
         });
 
         menu.setOnAction(e -> {
             dialog.close();
+
+            if (gameLoop != null) {
+                gameLoop.stop();
+            }
+
+            projectiles.clear();
+            pressedKeys.clear();
+
             primaryStage.setScene(createSelectionScene());
+
+            System.out.println("🏠 Returned to main menu");
         });
 
         exit.setOnAction(e -> {
+            System.out.println("👋 Exiting game...");
             Platform.exit();
             System.exit(0);
         });
@@ -787,7 +816,9 @@ public class BattleArenaGame extends Application {
         dialog.setScene(scene);
         dialog.show();
     }
-    // ================= GAME OVER BUTTON =================
+
+    // ================= HELPER METHOD =================
+// تأكد من وجود هذه الدالة أيضاً
     private Button createGameOverButton(String text, String color) {
         Button btn = new Button(text);
         btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -798,6 +829,29 @@ public class BattleArenaGame extends Application {
                         "-fx-background-radius: 8;" +
                         "-fx-cursor: hand;"
         );
+
+        btn.setOnMouseEntered(e -> {
+            btn.setStyle(
+                    "-fx-background-color: derive(" + color + ", -20%);" +
+                            "-fx-text-fill: black;" +
+                            "-fx-padding: 10 18 10 18;" +
+                            "-fx-background-radius: 8;" +
+                            "-fx-cursor: hand;" +
+                            "-fx-scale-x: 1.05;" +
+                            "-fx-scale-y: 1.05;"
+            );
+        });
+
+        btn.setOnMouseExited(e -> {
+            btn.setStyle(
+                    "-fx-background-color: " + color + ";" +
+                            "-fx-text-fill: black;" +
+                            "-fx-padding: 10 18 10 18;" +
+                            "-fx-background-radius: 8;" +
+                            "-fx-cursor: hand;"
+            );
+        });
+
         return btn;
     }
 
